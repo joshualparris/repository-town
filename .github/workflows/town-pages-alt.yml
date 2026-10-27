@@ -53,8 +53,10 @@ jobs:
           test -f dist/public/ui/yarn-preferences.js
           grep -q 'town-dialogue-settings' dist/public/ui/yarns.js
 
-      - name: Configure GitHub Pages
+      - name: Configure or enable GitHub Pages for this independent QA repository
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Upload verified independent site
         uses: actions/upload-pages-artifact@v3
         with:
