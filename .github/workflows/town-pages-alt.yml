@@ -57,10 +57,15 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      # Retries of a run must never collide with previous github-pages artifacts.
+      # deploy-pages requires exactly one artifact with the configured name.
       - name: Upload verified independent site
         uses: actions/upload-pages-artifact@v3
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: source/repository-town/dist/public
       - name: Publish GitHub Pages QA deployment
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
