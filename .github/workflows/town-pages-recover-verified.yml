@@ -1,0 +1,69 @@
+name: Repository Town verified QA artifact recovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/town-pages-recover-verified.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-reviewed-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Download previously verified and privacy-checked release
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 13501439635
+          github-token: ${{ github.token }}
+          run-id: 42166013630
+          path: recovered
+
+      - name: Extract and verify exact canonical release
+        run: |
+          set -euo pipefail
+          mkdir -p site
+          test -f recovered/artifact.tar
+          tar -xf recovered/artifact.tar -C site
+          test -f site/release.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const path = require('node:path');
+          const root = path.resolve('site');
+          const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json')));
+          const expected = '831f90fba749f71dcd589572e3cf122f30c5363f';
+          if (release.sourceCommit !== expected) throw Error('Wrong source commit: ' + release.sourceCommit);
+          let checked = 0;
+          for (const [name, hash] of Object.entries(release.files || {})) {
+            const f = path.resolve(root, name);
+            if (!f.startsWith(root + path.sep) || !fs.statSync(f).isFile()) throw Error('Unsafe or missing: '+name);
+            const got = crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+            if (got !== hash) throw Error('Altered release file: ' + name);
+            checked++;
+          }
+          if (checked < 100) throw Error('Release manifest incomplete: ' + checked);
+          console.log('Verified exact source', expected, 'with', checked, 'integrity-checked files');
+          NODE
+
+      - name: Upload verified release to unique Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: verified-qa-${{ github.run_id }}-${{ github.run_attempt }}
+          path: site
+
+      - name: Publish independent GitHub Pages QA
+        id: publish
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: verified-qa-${{ github.run_id }}-${{ github.run_attempt }}
