@@ -1,0 +1,78 @@
+name: Verify actual hosted Narromine QA (desktop + Android)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/town-pages-live-narromine-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for verified GitHub Pages source and check live HTTP
+        run: |
+          set -euo pipefail
+          target='831f90fba749f71dcd589572e3cf122f30c5363f'
+          for attempt in $(seq 1 90); do
+            if curl -fsSL --max-time 12 'https://joshualparris.github.io/repository-town/release.json' -o /tmp/town-release.json; then
+              observed=$(node -p "require('/tmp/town-release.json').sourceCommit")
+              if [ "$observed" = "$target" ]; then
+                echo "Published source verified: $observed"
+                break
+              fi
+              echo "Published release is $observed; waiting for $target"
+            fi
+            if [ "$attempt" -eq 90 ]; then echo "Expected published commit not available" >&2; exit 1; fi
+            sleep 10
+          done
+          curl -fsSL --max-time 25 'https://joshualparris.github.io/repository-town/' -o /tmp/town-home.html
+          test -s /tmp/town-home.html
+          curl -fsSL --max-time 25 'https://joshualparris.github.io/repository-town/main.js' -o /tmp/town-main.js
+          test -s /tmp/town-main.js
+          echo 'Hosted release.json, HTML and gameplay entry JS: HTTP 200'
+
+      - name: Check out exact tested game source
+        uses: actions/checkout@v4
+        with:
+          repository: joshualparris/JoshMemory
+          ref: 831f90fba749f71dcd589572e3cf122f30c5363f
+          path: source
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: source/repository-town/package-lock.json
+
+      - name: Install browser test harness and Chromium
+        working-directory: source/repository-town
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Play Narromine home and Coles on LIVE desktop WebGL
+        working-directory: source/repository-town
+        env:
+          RESIDENT_SCREENSHOT_DIR: test-results/hosted-narromine
+        run: node tests/resident-game-browser.mjs --url https://joshualparris.github.io/repository-town/
+
+      - name: Play Narromine home and Coles on LIVE Android-sized WebGL
+        working-directory: source/repository-town
+        env:
+          RESIDENT_SCREENSHOT_DIR: test-results/hosted-narromine
+        run: node tests/resident-game-browser.mjs --mobile --url https://joshualparris.github.io/repository-town/
+
+      - name: Preserve real hosted screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-narromine-qa-screenshots
+          path: source/repository-town/test-results/hosted-narromine/
+          if-no-files-found: warn
