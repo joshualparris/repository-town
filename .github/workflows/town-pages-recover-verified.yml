@@ -16,7 +16,7 @@ permissions:
 jobs:
   deploy-reviewed-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     environment:
       name: github-pages
       url: ${{ steps.publish.outputs.page_url }}
@@ -67,3 +67,6 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: verified-qa-${{ github.run_id }}-${{ github.run_attempt }}
+          # The 1,518-file Pages sync exceeded the default 10-minute limit;
+          # keep the exact already-verified artifact, allow GitHub to finish.
+          timeout: 1800000
