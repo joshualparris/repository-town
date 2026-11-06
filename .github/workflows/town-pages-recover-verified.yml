@@ -33,8 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p site
-          test -f recovered/artifact.tar
-          tar -xf recovered/artifact.tar -C site
+          test -f recovered/github-pages/artifact.tar
+          tar -xf recovered/github-pages/artifact.tar -C site
           test -f site/release.json
           node - <<'NODE'
           const fs = require('node:fs');
