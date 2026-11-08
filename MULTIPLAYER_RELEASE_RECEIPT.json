@@ -1,0 +1,12 @@
+{
+  "verifiedComplete": true,
+  "verificationStatus": "VERIFIED_COMPLETE",
+  "exactSourceCommit": "b898253a681c6a1b96e6f2d0e8c8238b82532554",
+  "expectedSourceCommit": "b898253a681c6a1b96e6f2d0e8c8238b82532554",
+  "pagesWorkflowConclusion": "success",
+  "publicReleaseCheckConclusion": "success",
+  "pageUrl": "https://joshualparris.github.io/repository-town/",
+  "checkedAt": "2026-11-08T00:38:09.424Z",
+  "workflowRunId": 42430634039,
+  "sourcePagesRunId": 42429904365
+}
