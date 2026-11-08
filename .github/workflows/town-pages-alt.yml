@@ -55,6 +55,32 @@ jobs:
           test -f dist/public/ui/yarn-preferences.js
           grep -q 'town-dialogue-settings' dist/public/ui/yarns.js
 
+      - name: Fetch separately reviewed Steam desktop web runtime
+        uses: actions/checkout@v4
+        with:
+          repository: joshualparris/RepoTown-Desktop
+          ref: main
+          path: steam-desktop
+          persist-credentials: false
+
+      - name: Strict Steam preview privacy gate and in-game integrity
+        working-directory: steam-desktop
+        run: |
+          npm run test:steam-ready
+          test -f game/index.html
+          test -f game/release.html
+          test -f game/engine/input.js
+          test -f game/ui/desktop-first-day.js
+          test -f game/houses.json
+
+      - name: Publish isolated Steam preview subdirectory
+        run: |
+          test ! -e source/repository-town/dist/public/steam-preview
+          mkdir -p source/repository-town/dist/public/steam-preview
+          cp -a steam-desktop/game/. source/repository-town/dist/public/steam-preview/
+          test -f source/repository-town/dist/public/steam-preview/index.html
+          echo "Published reviewed Steam desktop build into /steam-preview/ without replacing the canonical game."
+
       - name: Configure or enable GitHub Pages for this independent QA repository
         uses: actions/configure-pages@v5
         with:
