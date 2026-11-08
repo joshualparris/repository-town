@@ -1,4 +1,5 @@
 # Release 2026-11-08: publish multiplayer resilience #530 and production protocol v2
+# Steam edition 0.3.1: deploy privacy-approved RepoTown-Desktop at d7eb9a2d03d330759d886b86e4bbbf64d8a9a20a
 # Redeploy request 2026-11-08: canonical JoshMemory main includes multiplayer PR #529 (b898253a).
 name: Repository Town Pages Alternate
 
